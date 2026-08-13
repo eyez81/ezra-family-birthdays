@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4037a5">
+  <meta name="description" content="לוח ימי ההולדת של בני משפחת עזרא">
+  <title>ימי ההולדת של משפחת עזרא</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <div class="hero-mark" aria-hidden="true"><span>🎈</span><span>🎂</span><span>🎉</span></div>
+      <h1>לוח ימי הולדת שבט עזרא</h1>
+      <p>מעקב אחר ימי הולדת של בני המשפחה</p>
+    </header>
+    <div class="page-shell">
+      <section class="panel calendar-panel" aria-labelledby="calendar-title">
+        <div class="calendar-toolbar">
+          <button id="previous-month" class="month-button" aria-label="חודש קודם"><span aria-hidden="true">›</span> חודש קודם</button>
+          <h2 id="calendar-title"></h2>
+          <button id="next-month" class="month-button" aria-label="חודש הבא">חודש הבא <span aria-hidden="true">‹</span></button>
+        </div>
+        <div class="calendar-scroll">
+          <div id="weekdays" class="calendar-grid weekdays" aria-hidden="true"></div>
+          <div id="calendar-days" class="calendar-grid days-grid"></div>
+        </div>
+      </section>
+      <div class="content-grid">
+        <section class="panel month-list" aria-labelledby="month-birthdays-title">
+          <div class="section-title"><span class="title-icon" aria-hidden="true">▣</span><div><h2 id="month-birthdays-title">ימי הולדת בחודש הנוכחי</h2><p id="month-summary"></p></div></div>
+          <div id="month-cards" class="cards-list"></div>
+        </section>
+        <section class="panel family-list" aria-label="רשימות ימי הולדת">
+          <div class="tabs" role="tablist">
+            <button id="upcoming-tab" class="active" role="tab" aria-selected="true">ימי הולדת קרובים</button>
+            <button id="all-tab" role="tab" aria-selected="false">כל ימי ההולדת</button>
+          </div>
+          <div id="list-content"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
