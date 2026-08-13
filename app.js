@@ -7,6 +7,7 @@ const visibleMembers = familyMembers.filter((member) => member.showInLists !== f
 const peopleById = new Map(familyMembers.map((member) => [member.id, member]));
 let viewDate = new Date(today.getFullYear(), today.getMonth(), 1);
 let activeTab = "upcoming";
+let selectedPersonId = null;
 
 const $ = (selector) => document.querySelector(selector);
 const ageOnBirthday = (member, year) => year - member.year;
@@ -17,6 +18,8 @@ const currentAge = (member) => {
 };
 const dateLabel = (member) => `${member.day} ${monthNames[member.month - 1]} ${member.year}`;
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+const compactDate = (date) => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+const escapeIcs = (value) => String(value).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 
 function nextBirthday(member) {
   let date = new Date(today.getFullYear(), member.month - 1, member.day);
@@ -29,6 +32,63 @@ function dayDiff(to) {
   const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const end = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
   return Math.round((end - start) / 86400000);
+}
+
+function openGoogleCalendar(member) {
+  const start = nextBirthday(member);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `יום הולדת – ${member.name}`,
+    dates: `${compactDate(start)}/${compactDate(end)}`,
+    details: "יום הולדת משפחתי – אירוע שנתי",
+    recur: "RRULE:FREQ=YEARLY"
+  });
+  window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, "_blank", "noopener,noreferrer");
+}
+
+function downloadAllBirthdays() {
+  const members = visibleMembers.filter((member) => !member.memorial);
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const events = members.map((member) => {
+    const start = nextBirthday(member);
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+    return [
+      "BEGIN:VEVENT",
+      `UID:birthday-${member.id}@ezra-family`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${compactDate(start)}`,
+      `DTEND;VALUE=DATE:${compactDate(end)}`,
+      "RRULE:FREQ=YEARLY",
+      `SUMMARY:${escapeIcs(`יום הולדת – ${member.name}`)}`,
+      "DESCRIPTION:יום הולדת משפחתי – אירוע שנתי",
+      "TRANSP:TRANSPARENT",
+      "END:VEVENT"
+    ].join("\r\n");
+  }).join("\r\n");
+  const calendar = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Ezra Family Birthdays//HE",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "X-WR-CALNAME:ימי הולדת – משפחת עזרא",
+    events,
+    "END:VCALENDAR",
+    ""
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([calendar], { type: "text/calendar;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "ezra-family-birthdays.ics";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  const button = $("#download-all-calendar");
+  const original = button.innerHTML;
+  button.textContent = `הקובץ הוכן – ${members.length} ימי הולדת`;
+  setTimeout(() => { button.innerHTML = original; }, 2500);
 }
 
 function cardHtml(member, year, days) {
@@ -94,10 +154,12 @@ function relationSection(title, ids) {
 function showPersonDetails(id) {
   const person = peopleById.get(Number(id));
   if (!person) return;
+  selectedPersonId = person.id;
   const siblings = [...new Set(person.parents.flatMap((parentId) => peopleById.get(parentId)?.children || []))].filter((siblingId) => siblingId !== person.id);
   const grandchildren = [...new Set(person.children.flatMap((childId) => peopleById.get(childId)?.children || []))];
   $("#person-dialog-title").textContent = `${person.name}${person.memorial ? " ז״ל" : ""}`;
   $("#person-summary").innerHTML = `<p><span aria-hidden="true">▣</span> <strong>תאריך לידה:</strong> ${dateLabel(person)}</p><p><span aria-hidden="true">♙</span> <strong>${person.memorial ? "לזכר/ה:" : "גיל:"}</strong> ${person.memorial ? "ז״ל" : currentAge(person)}</p>`;
+  $("#add-person-calendar").hidden = Boolean(person.memorial);
   $("#family-tree").innerHTML = [
     relationSection("בן/בת זוג", person.spouse ? [person.spouse] : []),
     relationSection("הורים", person.parents),
@@ -123,6 +185,11 @@ $("#previous-month").addEventListener("click", () => { viewDate = new Date(viewD
 $("#next-month").addEventListener("click", () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); });
 $("#upcoming-tab").addEventListener("click", () => selectTab("upcoming"));
 $("#all-tab").addEventListener("click", () => selectTab("all"));
+$("#download-all-calendar").addEventListener("click", downloadAllBirthdays);
+$("#add-person-calendar").addEventListener("click", () => {
+  const person = peopleById.get(selectedPersonId);
+  if (person && !person.memorial) openGoogleCalendar(person);
+});
 document.addEventListener("click", (event) => {
   const trigger = event.target.closest(".person-trigger");
   if (trigger) showPersonDetails(trigger.dataset.personId);
