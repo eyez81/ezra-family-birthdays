@@ -39,7 +39,7 @@ function openGoogleCalendar(member) {
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `יום הולדת – ${member.name}`,
+    text: `יום הולדת - ${member.name} 🎂🎈🎉`,
     dates: `${compactDate(start)}/${compactDate(end)}`,
     details: "יום הולדת משפחתי – אירוע שנתי",
     recur: "RRULE:FREQ=YEARLY"
@@ -60,7 +60,7 @@ function downloadAllBirthdays() {
       `DTSTART;VALUE=DATE:${compactDate(start)}`,
       `DTEND;VALUE=DATE:${compactDate(end)}`,
       "RRULE:FREQ=YEARLY",
-      `SUMMARY:${escapeIcs(`יום הולדת – ${member.name}`)}`,
+      `SUMMARY:${escapeIcs(`יום הולדת - ${member.name} 🎂🎈🎉`)}`,
       "DESCRIPTION:יום הולדת משפחתי – אירוע שנתי",
       "TRANSP:TRANSPARENT",
       "END:VEVENT"
